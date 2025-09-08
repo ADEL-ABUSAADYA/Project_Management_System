@@ -1,0 +1,57 @@
+﻿version: "3.9"
+
+services:
+  dockerApp:
+    container_name: Project_Management_System
+    build:
+      context: .
+      dockerfile: Project_Management_System/Dockerfile
+    image: dockerapp:dev
+    ports:
+      - "4000:8080"
+    volumes:
+      - ./Project_Management_System/src:/app/Project_Management_System/src:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=PMS;User Id=sa;Password=Strong@12345;TrustServerCertificate=True;
+      - ConnectionStrings__CAP-SQLConnection=Server=sqlserver,1433;Database=PMS;User Id=sa;Password=Strong@12345;TrustServerCertificate=True;
+      - JWTSettings__SecretKey=qwertyuiop[]asd124tgqrweee15364qfwretryutiyuryrterdvfn
+      - OTPSettings__SecretKey=qwertyuiop[UsersOtp]asd124tgqrweee15364qfwretryutiyuryrterdvfn
+      - EmailPasswords=vxfdhstkqegcfnei - csxyokaorioanxek - 11223344Upskilling
+
+      # ✅ RabbitMQ config for CAP
+      - Cap__RabbitMQ__HostName=rabbitmq
+      - Cap__RabbitMQ__Port=5672
+      - Cap__RabbitMQ__UserName=user
+      - Cap__RabbitMQ__Password=password
+      - Cap__RabbitMQ__ExchangeName=cap.default.router
+      - Cap__DefaultGroupName=Cap.queue
+      - Cap__FailedRetryCount=5
+    depends_on:
+      - sqlserver
+      - rabbitmq
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql2022
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Strong@12345"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldatabase:/var/opt/mssql
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+
+volumes:
+  sqldatabase:
+    driver: local
