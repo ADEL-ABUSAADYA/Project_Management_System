@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DotNetCore.CAP;
+using Hangfire;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Project_Management_System.Common.BaseHandlers;
@@ -8,6 +9,7 @@ using Project_Management_System.Common.Views;
 using Project_Management_System.Data.Repositories;
 using Project_Management_System.Features.AuthManagement.RegisterUser.Queries;
 using Project_Management_System.Models;
+using Project_Management_System.src.Helpers;
 
 namespace Project_Management_System.Features.AuthManagement.RegisterUser.Commands;
 
@@ -42,7 +44,7 @@ public class RegisterUserCommandHandler : BaseRequestHandler<RegisterUserCommand
             Name = request.name,
             PhoneNo = request.phoneNo,
             Country = request.country,
-            RoleID = new Guid("80146a4c-2dbe-4eb7-b4dd-ba1d3e8eeb93"),
+            RoleID = new Guid("f5beeceb-e61b-4cd9-bf6c-a41d5e7b6f4b"),
             IsActive = true,
             ConfirmationToken = Guid.NewGuid().ToString()
         };
@@ -54,11 +56,13 @@ public class RegisterUserCommandHandler : BaseRequestHandler<RegisterUserCommand
         if (userID == Guid.Empty)
             return RequestResult<bool>.Failure(ErrorCode.UnKnownError);
 
-        var message = new UserRegisteredEvent(user.Email, user.Name, $"{user.ConfirmationToken}", DateTime.UtcNow);
-        var messageJson = JsonSerializer.Serialize(message);
-        await _capPublisher.PublishAsync("user.registered", messageJson);
+        //var message = new UserRegisteredEvent(user.Email, user.Name, $"{user.ConfirmationToken}", DateTime.UtcNow);
+        //var messageJson = JsonSerializer.Serialize(message);
+        //await _capPublisher.PublishAsync("user.registered", messageJson);
 
-        
+        BackgroundJob.Enqueue(() => EmailHelper.SendEmail(user.Email, $"{user.ConfirmationToken}", user.Name));
+
+
         return RequestResult<bool>.Success(true);
     }
 }

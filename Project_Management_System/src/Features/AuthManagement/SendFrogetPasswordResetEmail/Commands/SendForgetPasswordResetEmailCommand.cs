@@ -1,5 +1,6 @@
-using MediatR;
+using Hangfire;
 using MailKit.Net.Smtp;
+using MediatR;
 using MimeKit;
 using Project_Management_System.Common.BaseHandlers;
 using Project_Management_System.Common.Data.Enums;
@@ -8,6 +9,7 @@ using Project_Management_System.Data.Repositories;
 using Project_Management_System.Features.AuthManagement.ReSendRegistrationEmail.Queries;
 using Project_Management_System.Features.AuthManagement.SendFrogetPasswordResetEmail.Queries;
 using Project_Management_System.Models;
+using Project_Management_System.src.Helpers;
 
 
 namespace Project_Management_System.Features.AuthManagement.SendFrogetPasswordResetEmail.Commands;
@@ -42,60 +44,11 @@ public class SendForgetPasswordResetEmailCommandHandler : BaseRequestHandler<Sen
              
         await _repository.SaveChangesAsync();
 
-        var confirmationToken = $"{user.ResetPasswordToken}";
-        
-        var emailSent = await SendConfirmationEmail(request.email, "UpSkilling Student", confirmationToken);
-        if (!emailSent.isSuccess)
-            return RequestResult<bool>.Failure(ErrorCode.EmailNotSent);
+      
 
+        BackgroundJob.Enqueue(() => EmailHelper.SendEmail(user.Email, user.ResetPasswordToken, null));
         return RequestResult<bool>.Success(true);
     }
     
-    private async Task<RequestResult<bool>> SendConfirmationEmail(string email, string name, string confirmationLink)
-    {
-        var message = new MimeMessage();
-        message.From.Add(new MailboxAddress("adel", "upskillingfinalproject@gmail.com"));
-        message.To.Add(new MailboxAddress(name, email));
-        message.Subject = "UpSkilling Final Project";
-
-        // Create multipart content for both plain text and HTML
-        var bodyBuilder = new BodyBuilder
-        {
-            TextBody = $"Please confirm your registration by token [{confirmationLink}]",
-            HtmlBody = $"Please confirm your registration by token [{confirmationLink}]"
-        };
-
-        message.Body = bodyBuilder.ToMessageBody();
-
-        try
-        {
-            using (var client = new SmtpClient())
-            {
-                // Set the timeout for connection and authentication
-                client.Timeout = 10000;  // Timeout after 10 seconds
-            
-                // Connect using StartTLS for security
-                await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
-
-                // Authenticate with the provided credentials
-                await client.AuthenticateAsync("upskillingfinalproject@gmail.com", "vxfdhstkqegcfnei");
-
-                // Send the email
-                await client.SendAsync(message);
-                await client.DisconnectAsync(true);
-            }
-
-            return RequestResult<bool>.Success(true);
-        }
-        catch (Exception ex)
-        {
-            // Log the detailed exception message for debugging
-            Console.WriteLine($"Error sending email: {ex.Message}");
-            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-
-            // Return failure with error details
-            return RequestResult<bool>.Failure(ErrorCode.UnKnownError, ex.Message);
-        }
-    }
-}
+   }
 

@@ -1,10 +1,11 @@
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Project_Management_System.Common.BaseEndpoints;
 using Project_Management_System.Common.Views;
-using Project_Management_System.Features.Common.Users.DTOs;
 using Project_Management_System.Features.AuthManagement.LogInUser.Commands;
 using Project_Management_System.Features.AuthManagement.RegisterUser.Commands;
+using Project_Management_System.Features.Common.Users.DTOs;
 
 
 namespace Project_Management_System.Features.AuthManagement.LogInUser;
@@ -18,7 +19,8 @@ public class LogInUserEndpoint : BaseEndpoint<LogInUserRequestViewModel, LoginRe
    [HttpPost]
    public async Task<EndpointResponse<LoginResponeViewModel>> LogInUser(LogInUserRequestViewModel viewmodel)
    {
-      var validationResult =  ValidateRequest(viewmodel);
+        BackgroundJob.Enqueue(() => Console.WriteLine("gfdgdfgdfg"));
+        var validationResult =  ValidateRequest(viewmodel);
       if (!validationResult.isSuccess)
          return validationResult;
 

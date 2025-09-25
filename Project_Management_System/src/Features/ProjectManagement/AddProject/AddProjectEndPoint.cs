@@ -27,7 +27,6 @@ namespace Project_Management_System.Features.ProjectManagement.AddProject
         {
             var message = new BasicMessage<RequestAddProjectModel>(viewmodel);
             await _capPublisher.PublishAsync("Adel", message);
-            await _capPublisher.PublishAsync("adel", message);
             var validationResult = ValidateRequest(viewmodel);
             if (!validationResult.isSuccess)
                 return validationResult;

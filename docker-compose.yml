@@ -15,6 +15,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=PMS;User Id=sa;Password=Strong@12345;TrustServerCertificate=True;
       - ConnectionStrings__CAP-SQLConnection=Server=sqlserver,1433;Database=PMS;User Id=sa;Password=Strong@12345;TrustServerCertificate=True;
+      - ConnectionStrings__HangfireConnection=Server=sqlserver,1433;Database=PMS;User Id=sa;Password=Strong@12345;TrustServerCertificate=True;
       - JWTSettings__SecretKey=qwertyuiop[]asd124tgqrweee15364qfwretryutiyuryrterdvfn
       - OTPSettings__SecretKey=qwertyuiop[UsersOtp]asd124tgqrweee15364qfwretryutiyuryrterdvfn
       - EmailPasswords=vxfdhstkqegcfnei - csxyokaorioanxek - 11223344Upskilling

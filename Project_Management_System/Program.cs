@@ -1,6 +1,7 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Consul;
+using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -9,7 +10,7 @@ using Project_Management_System.Configrations;
 using Project_Management_System.Data;
 using Project_Management_System.Filters;
 using Project_Management_System.Middlewares;
-using Project_Management_System.src.Features.ProjectManagement.AddProject;
+using Project_Management_System.src.Common.Cap;
 using Scalar.AspNetCore;
 using System.Reflection;
 using System.Text;
@@ -22,13 +23,8 @@ namespace Project_Management_System
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
-
             builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
             builder.Host.ConfigureContainer<ContainerBuilder>(container =>
             {
@@ -40,7 +36,6 @@ namespace Project_Management_System
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-
             #region CAP
             var capConn = builder.Configuration.GetConnectionString("CAP-SQLConnection");
 
@@ -61,12 +56,10 @@ namespace Project_Management_System
 
                 options.UseDashboard();
             });
+
+            
+            builder.Services.AddTransient<CapConsumer>();
             #endregion
-
-
-            builder.Services.AddTransient<ProjectAddedConsumer>();
-            builder.Services.AddTransient<AdelProjectAddedConsumer>();
-
             #region JWT
             var jwtSettings = builder.Configuration.GetSection("JWTSettings");
             var otpSettings = builder.Configuration.GetSection("OTPSettings");
@@ -101,9 +94,23 @@ namespace Project_Management_System
                     ValidateIssuerSigningKey = true,
                     ValidateLifetime = true,
                 };
-            }); 
+            });
             #endregion
-
+            #region Hangfire
+            builder.Services.AddHangfire(configuration =>
+                configuration.SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireConnection"), new Hangfire.SqlServer.SqlServerStorageOptions
+                {
+                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                    QueuePollInterval = TimeSpan.FromSeconds(5),
+                    UseRecommendedIsolationLevel = true,
+                    DisableGlobalLocks = true
+                }));
+            builder.Services.AddHangfireServer();
+            #endregion
             builder.Services.AddMediatR(options =>
             {
                 options.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
@@ -111,13 +118,11 @@ namespace Project_Management_System
                 options.AddOpenBehavior(typeof(TransactionBehavior<,>));
 
             });
-
             builder.Services.AddControllersWithViews(options =>
             {
                 options.Filters.Add<UserInfoFilter>();
-                options.Filters.Add<CancellationTokenFilter>();
+                //options.Filters.Add<CancellationTokenFilter>();
             });
-            
 
             var app = builder.Build();
 
@@ -127,24 +132,20 @@ namespace Project_Management_System
                 await db.Database.MigrateAsync();
                 await DatabaseSeeder.SeedAsync(db);
             }
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
                 app.MapScalarApiReference();
+                
             }
-
-            // app.UseHttpsRedirection();
-
+            app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseMiddleware<GlobalErrorHandlerMiddleware>();
-            // app.UseMiddleware<TransactionMiddleware>();
-            // app.UseMiddleware<TimeOutMiddleware>();
-
-
+            //app.UseMiddleware<TimeOutMiddleware>();
+            
             app.MapControllers();
-
+            app.UseHangfireDashboard("/hangfire");
             app.Run();
         }
     }

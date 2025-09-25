@@ -26,7 +26,6 @@ using Project_Management_System.Filters;
 using Project_Management_System.Helpers;
 using Project_Management_System.Middlewares;
 using Project_Management_System.Models;
-using Project_Management_System.src.Features.ProjectManagement.AddProject;
 using System.Reflection;
 using System.Text;
 using Module = Autofac.Module;

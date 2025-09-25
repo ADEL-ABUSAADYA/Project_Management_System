@@ -1,11 +1,13 @@
+using Hangfire;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Project_Management_System.Common.BaseHandlers;
 using Project_Management_System.Common.Views;
 using Project_Management_System.Data.Repositories;
-using Project_Management_System.Features.Common.Users.DTOs;
 using Project_Management_System.Features.AuthManagement.LogInUser.Queries;
+using Project_Management_System.Features.Common.Users.DTOs;
 using Project_Management_System.Models;
+using Project_Management_System.src.Helpers;
 
 namespace Project_Management_System.Features.AuthManagement.LogInUser.Commands;
 
@@ -44,7 +46,6 @@ public class LogInUserCommandHandler : BaseRequestHandler<LogInUserCommand, Requ
             var token2fa = _tokenHelper.Generate2FALoginToken(userInfo.data.ID);
             return RequestResult<TokenDTO>.Success(new TokenDTO(LogInToken: "", TokenWith2FA: token2fa));
         }
-
         return RequestResult<TokenDTO>.Failure(userInfo.errorCode, userInfo.message);
     }
 

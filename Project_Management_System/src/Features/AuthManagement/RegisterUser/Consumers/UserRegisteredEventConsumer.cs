@@ -5,8 +5,8 @@ using MailKit.Net.Smtp;
 using MimeKit;
 using Project_Management_System.Common.Data.Enums;
 using Project_Management_System.Common.Views;
-using Project_Management_System.Features.Common;
 using Project_Management_System.Models;
+using Project_Management_System.src.Helpers;
 using RabbitMQ.Client.Events;
 
 namespace Project_Management_System.Features.AuthManagement.RegisterUser.Consumers;
@@ -26,7 +26,7 @@ public class UserRegisteredEventConsumer : ICapSubscribe
             }
 
             var confirmationLink = $"{userEvent.ActivationLink}";
-            var result = await EmailService.SendEmail(userEvent.Email, userEvent.Name, confirmationLink);
+            var result = await EmailHelper.SendEmail(userEvent.Email, userEvent.Name, confirmationLink);
 
             if (!result.isSuccess)
             {

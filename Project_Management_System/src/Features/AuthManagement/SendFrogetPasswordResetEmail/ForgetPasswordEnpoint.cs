@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Hangfire;
+using Microsoft.AspNetCore.Mvc;
 using Project_Management_System.Common.BaseEndpoints;
 using Project_Management_System.Common.Data.Enums;
 using Project_Management_System.Common.Views;
 using Project_Management_System.Features.AuthManagement.SendFrogetPasswordResetEmail.Commands;
+using Project_Management_System.src.Helpers;
 
 namespace Project_Management_System.Features.AuthManagement.SendFrogetPasswordResetEmail
 {
@@ -15,7 +17,7 @@ namespace Project_Management_System.Features.AuthManagement.SendFrogetPasswordRe
         }
 
         [HttpGet]
-        public async Task<EndpointResponse<bool>> SendFrogetPasswordResstEmail( [FromQuery]ForgetPasswordViewModel model)
+        public async Task<EndpointResponse<bool>> SendFrogetPasswordResstEmail(ForgetPasswordViewModel model)
         {
             var validationResult = ValidateRequest(model);
             if (!validationResult.isSuccess)

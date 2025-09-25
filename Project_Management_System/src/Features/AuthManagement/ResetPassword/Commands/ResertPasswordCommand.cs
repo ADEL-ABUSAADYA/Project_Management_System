@@ -11,7 +11,7 @@ using Project_Management_System.Models;
 
 namespace Project_Management_System.Features.AuthManagement.ResetPassword.Commands
 {
-    public record ResetPasswordCommand(string ConfirmatinToken, string email, string NewPassword) : IRequest<RequestResult<bool>>;
+    public record ResetPasswordCommand(string ResetToken, string email, string NewPassword) : IRequest<RequestResult<bool>>;
 
 
     public class ResetPasswordCommandHandeler : BaseRequestHandler<ResetPasswordCommand, RequestResult<bool>>
@@ -24,7 +24,7 @@ namespace Project_Management_System.Features.AuthManagement.ResetPassword.Comman
 
         public override async Task<RequestResult<bool>> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
         {
-           var userExist = await  _mediator.Send(new GetUserIDIfPasswordTokenMatchQuery(request.email, request.ConfirmatinToken), cancellationToken);
+           var userExist = await  _mediator.Send(new GetUserIDIfPasswordTokenMatchQuery(request.email, request.ResetToken), cancellationToken);
            
            if (!userExist.isSuccess)
                return RequestResult<bool>.Failure(userExist.errorCode, userExist.message);

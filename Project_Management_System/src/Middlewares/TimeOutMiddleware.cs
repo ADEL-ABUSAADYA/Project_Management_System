@@ -1,22 +1,35 @@
+﻿using Project_Management_System.Common;
+
 public class TimeOutMiddleware : IMiddleware
 {
-    private static readonly object TokenKey = new();
+    private readonly CancellationTokenProvider _cancellationTokenProvider;
+
+    public TimeOutMiddleware(CancellationTokenProvider provider)
+    {
+       _cancellationTokenProvider = provider;
+    }
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, context.RequestAborted);
 
-        context.Items[TokenKey] = linkedCts.Token;
+        context.Items["CancellationToken"] = linkedCts.Token;
+        _cancellationTokenProvider.CancellationToken = linkedCts.Token;
 
         Task requestTask = next(context);
         Task delayTask = Task.Delay(TimeSpan.FromSeconds(10), linkedCts.Token);
 
-        if (delayTask == await Task.WhenAny(requestTask, delayTask))
+        var finishedTask = await Task.WhenAny(requestTask, delayTask);
+
+        if (finishedTask == delayTask)
         {
             timeoutCts.Cancel();
-            context.Response.StatusCode = StatusCodes.Status504GatewayTimeout;
-            await context.Response.WriteAsync("Request timed out.");
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode = StatusCodes.Status504GatewayTimeout;
+                await context.Response.WriteAsync("Request timed out.");
+            }
         }
     }
 }
