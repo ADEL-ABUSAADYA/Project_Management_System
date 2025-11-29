@@ -13,3 +13,5 @@ jobs:
         run: echo "pushed ya moalim"
       - name: Checkout
         uses: actions/checkout@v6.0.0
+      - name: list files
+        run: ls -la
